@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance — Enterprise Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;800;900&family=Barlow:wght@300;400;500&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #05080f;
+  --surface: #0b1120;
+  --blue:    #1e90ff;
+  --blue-dim: rgba(30,144,255,0.12);
+  --orange:  #ff5c35;
+  --green:   #00d68f;
+  --text:    #f0f4ff;
+  --muted:   #4a5878;
+  --line:    rgba(255,255,255,0.06);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  font-family: 'Barlow', sans-serif;
+  color: var(--text);
+  overflow: hidden;
+  cursor: default;
+}
+
+/* ── Grain overlay ── */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; opacity: 0.5;
+}
+
+/* ── Deck ── */
+.deck { width: 100vw; height: 100vh; position: relative; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: none;
+  padding: 0;
+  overflow: hidden;
+}
+.slide.active { display: flex; flex-direction: column; }
+
+/* ── Slide chrome ── */
+.slide-chrome {
+  position: absolute;
+  bottom: 36px; left: 56px; right: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 50;
+}
+.chrome-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted);
+}
+.chrome-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted);
+}
+.progress-dots { display: flex; gap: 6px; align-items: center; }
+.pdot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--muted); transition: all 0.3s;
+  cursor: pointer;
+}
+.pdot.done { background: var(--blue); }
+.pdot.current { background: var(--blue); width: 20px; border-radius: 2px; }
+
+/* ── Top accent line ── */
+.top-line {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--blue); z-index: 50;
+  transform-origin: left;
+  transition: transform 0.5s ease;
+}
+
+/* ══════════════════════════ TITLE SLIDE ══════════════════════════ */
+#s0 {
+  justify-content: center;
+  padding: 80px 80px 80px;
+  background: radial-gradient(ellipse 70% 60% at 80% 50%, rgba(30,144,255,0.08) 0%, transparent 70%);
+}
+#s0 .eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 28px;
+  display: flex; align-items: center; gap: 14px;
+  animation: fadeUp 0.6s ease both;
+}
+#s0 .eyebrow::before { content: ''; width: 36px; height: 1px; background: var(--blue); }
+#s0 h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(4rem, 9vw, 8rem);
+  font-weight: 900; line-height: 0.92;
+  letter-spacing: -0.01em; text-transform: uppercase;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+#s0 h1 em { font-style: normal; color: var(--blue); }
+#s0 .sub {
+  font-size: 1.05rem; font-weight: 300;
+  color: var(--muted); margin-top: 32px;
+  max-width: 480px; line-height: 1.7;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+#s0 .tag-row {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 48px;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+#s0 .tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  border: 1px solid var(--line); border-radius: 3px;
+  padding: 6px 14px; color: var(--muted);
+}
+
+/* ══════════════════════════ SECTION DIVIDER ══════════════════════════ */
+.divider-slide {
+  justify-content: center; align-items: flex-start;
+  padding: 80px;
+  background: linear-gradient(135deg, rgba(30,144,255,0.06) 0%, transparent 50%);
+}
+.divider-slide .section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 14px;
+}
+.divider-slide .section-label::before { content: ''; width: 32px; height: 1px; background: var(--blue); }
+.divider-slide h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  font-weight: 900; line-height: 0.92;
+  text-transform: uppercase; letter-spacing: -0.01em;
+}
+.divider-slide h2 em { font-style: normal; color: var(--blue); }
+.divider-slide .context {
+  font-size: 1rem; font-weight: 300;
+  color: var(--muted); max-width: 560px;
+  line-height: 1.75; margin-top: 28px;
+}
+
+/* ══════════════════════════ REVEAL SLIDE ══════════════════════════ */
+/* Generic template: big headline + reveal items */
+.reveal-slide {
+  padding: 64px 80px 80px;
+}
+.reveal-slide .slide-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.reveal-slide .slide-label::before { content: ''; width: 28px; height: 1px; background: var(--blue); }
+.reveal-slide .slide-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  font-weight: 900; line-height: 1;
+  text-transform: uppercase; letter-spacing: -0.01em;
+  margin-bottom: 48px; max-width: 860px;
+}
+.reveal-slide .slide-title em { font-style: normal; color: var(--blue); }
+
+/* Reveal items */
+.reveal-items { display: flex; flex-direction: column; gap: 0; }
+.reveal-item {
+  display: flex; align-items: flex-start; gap: 28px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+.reveal-item.visible {
+  opacity: 1; transform: none;
+  pointer-events: auto;
+}
+.reveal-item:last-child { border-bottom: 1px solid var(--line); }
+.item-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--blue);
+  width: 28px; flex-shrink: 0; padding-top: 3px;
+}
+.item-body { flex: 1; }
+.item-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.3rem, 2.8vw, 2rem);
+  font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.01em; line-height: 1;
+  margin-bottom: 6px;
+}
+.item-body p {
+  font-size: 0.88rem; font-weight: 300;
+  color: var(--muted); line-height: 1.6;
+  max-width: 680px;
+}
+.item-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 2px;
+  flex-shrink: 0; align-self: flex-start; margin-top: 3px;
+}
+.badge-red    { background: rgba(255,92,53,0.15);   color: var(--orange); border: 1px solid rgba(255,92,53,0.3); }
+.badge-blue   { background: rgba(30,144,255,0.12);  color: var(--blue);   border: 1px solid rgba(30,144,255,0.3); }
+.badge-green  { background: rgba(0,214,143,0.1);    color: var(--green);  border: 1px solid rgba(0,214,143,0.3); }
+
+/* ══════════════════════════ BIG STATEMENT SLIDE ══════════════════════════ */
+.statement-slide {
+  justify-content: center; align-items: flex-start;
+  padding: 80px;
+}
+.statement-slide .statement {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2.2rem, 5vw, 4.2rem);
+  font-weight: 900; text-transform: uppercase;
+  line-height: 0.95; letter-spacing: -0.01em;
+  max-width: 900px;
+}
+.statement-slide .statement em { font-style: normal; color: var(--blue); }
+.statement-slide .statement .orange { color: var(--orange); }
+.statement-slide .supporting {
+  font-size: 1rem; font-weight: 300;
+  color: var(--muted); margin-top: 32px;
+  max-width: 560px; line-height: 1.75;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.statement-slide .supporting.visible { opacity: 1; transform: none; }
+
+/* ══════════════════════════ FLOW SLIDE ══════════════════════════ */
+.flow-slide {
+  padding: 64px 80px 80px;
+}
+.flow-nodes {
+  display: flex; align-items: stretch;
+  gap: 0; flex: 1; margin-top: 16px;
+}
+.flow-node {
+  flex: 1; padding: 28px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  position: relative;
+  opacity: 0; transform: translateX(-16px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.flow-node.visible { opacity: 1; transform: none; }
+.flow-node:first-child { border-radius: 8px 0 0 8px; }
+.flow-node:last-child  { border-radius: 0 8px 8px 0; }
+.flow-node::after {
+  content: '›';
+  position: absolute; right: -14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--blue); font-size: 1.4rem; z-index: 2;
+}
+.flow-node:last-child::after { display: none; }
+.flow-node .fn-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em; color: var(--blue);
+  text-transform: uppercase; display: block; margin-bottom: 10px;
+}
+.flow-node h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.3rem; font-weight: 800;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.flow-node p { font-size: 0.78rem; font-weight: 300; color: var(--muted); line-height: 1.5; }
+.flow-node.highlight { background: var(--blue-dim); border-color: rgba(30,144,255,0.3); }
+
+/* ══════════════════════════ DIAGRAM SLIDE — Gateway ══════════════════════════ */
+.gateway-slide { padding: 64px 80px 80px; }
+.gw-layer { margin-bottom: 12px; }
+.gw-layer-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+  opacity: 0; transition: opacity 0.4s;
+}
+.gw-layer-label.visible { opacity: 1; }
+.gw-boxes { display: flex; gap: 10px; }
+.gw-box {
+  flex: 1; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 14px 16px; text-align: center;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.35s, transform 0.35s;
+}
+.gw-box.visible { opacity: 1; transform: none; }
+.gw-box h4 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem; font-weight: 700;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.gw-box p { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+.gw-center {
+  background: var(--blue-dim); border-color: rgba(30,144,255,0.35);
+  padding: 20px 24px;
+}
+.gw-center h4 { color: var(--blue); font-size: 1.3rem; }
+.gw-arrow {
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--blue); padding: 6px 0;
+  opacity: 0; transition: opacity 0.4s;
+}
+.gw-arrow.visible { opacity: 1; }
+
+/* ══════════════════════════ ATTACK PATH SLIDE ══════════════════════════ */
+.attack-slide { padding: 64px 80px 80px; }
+.attack-chain {
+  display: flex; align-items: center; gap: 0;
+  margin: 32px 0;
+}
+.ac-node {
+  flex: 1; padding: 24px 18px;
+  border-radius: 6px; text-align: center;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.ac-node .ac-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+.ac-node h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.ac-node p { font-size: 0.74rem; color: var(--muted); line-height: 1.4; }
+.ac-node.red   { border-color: rgba(255,92,53,0.4); background: rgba(255,92,53,0.07); }
+.ac-node.blue  { border-color: rgba(30,144,255,0.35); background: var(--blue-dim); }
+.ac-node.amber { border-color: rgba(255,185,0,0.35); background: rgba(255,185,0,0.06); }
+.ac-node.danger{ border-color: rgba(255,92,53,0.5); background: rgba(255,92,53,0.1); }
+.ac-arrow { font-size: 1.2rem; color: var(--orange); padding: 0 8px; flex-shrink: 0; }
+.attack-insight {
+  background: rgba(255,92,53,0.07);
+  border: 1px solid rgba(255,92,53,0.25);
+  border-radius: 6px; padding: 20px 24px;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.attack-insight.visible { opacity: 1; transform: none; }
+.attack-insight .ins-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--orange); margin-bottom: 8px;
+}
+.attack-insight p { font-size: 0.92rem; font-weight: 300; color: #c8d0e0; line-height: 1.7; }
+.attack-insight strong { color: var(--text); font-weight: 500; }
+
+/* ══════════════════════════ TWO-COL REVEAL ══════════════════════════ */
+.two-col-slide { padding: 64px 80px 80px; }
+.two-col-body { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; flex: 1; margin-top: 8px; }
+.col-block { display: flex; flex-direction: column; gap: 12px; }
+.col-item {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 6px; padding: 18px 20px;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.col-item.visible { opacity: 1; transform: none; }
+.col-item .ci-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 6px;
+}
+.col-item .ci-label.orange { color: var(--orange); }
+.col-item h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem; font-weight: 800;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.col-item p { font-size: 0.83rem; font-weight: 300; color: var(--muted); line-height: 1.6; }
+.col-item .pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.col-item .pill {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 2px;
+  border: 1px solid rgba(30,144,255,0.25);
+  color: var(--blue); background: var(--blue-dim);
+}
+.col-item .pill.orange { border-color: rgba(255,92,53,0.25); color: var(--orange); background: rgba(255,92,53,0.07); }
+
+/* ══════════════════════════ SHARED HEADER ══════════════════════════ */
+.s-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.s-label::before { content: ''; width: 24px; height: 1px; background: var(--blue); }
+.s-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900; text-transform: uppercase;
+  line-height: 0.95; letter-spacing: -0.01em;
+  margin-bottom: 32px;
+}
+.s-title em { font-style: normal; color: var(--blue); }
+
+/* ══════════════════════════ ANIMATIONS ══════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ══════════════════════════ HINT ══════════════════════════ */
+.hint {
+  position: fixed; bottom: 38px; right: 60px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+  z-index: 100;
+  transition: opacity 0.3s;
+}
+.hint-key {
+  border: 1px solid var(--muted); border-radius: 3px;
+  padding: 2px 7px; font-size: 9px;
+}
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+<!-- ══════ SLIDE 0 — TITLE ══════ -->
+<div class="slide active" id="s0">
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 75% 40%,rgba(30,144,255,0.09) 0%,transparent 65%);pointer-events:none;"></div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:80px;">
+    <div class="eyebrow" style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:var(--blue);margin-bottom:28px;display:flex;align-items:center;gap:14px;animation:fadeUp .6s ease both;">
+      <span style="width:36px;height:1px;background:var(--blue);display:block;"></span>
+      Enterprise Security Briefing
+    </div>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(4.5rem,10vw,9rem);font-weight:900;line-height:.88;text-transform:uppercase;letter-spacing:-.02em;animation:fadeUp .6s .1s ease both;">
+      AI<br><em style="font-style:normal;color:var(--blue);">Governance</em><br>&amp; Adoption
+    </h1>
+    <p style="font-size:1rem;font-weight:300;color:var(--muted);margin-top:36px;max-width:440px;line-height:1.75;animation:fadeUp .6s .2s ease both;">
+      Mapping the enterprise AI risk landscape and the controls required to operate AI securely at scale.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:48px;animation:fadeUp .6s .3s ease both;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line);border-radius:2px;padding:5px 13px;color:var(--muted);">Shadow AI</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line);border-radius:2px;padding:5px 13px;color:var(--muted);">Vibe Coding</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line);border-radius:2px;padding:5px 13px;color:var(--muted);">Agent Runtime</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line);border-radius:2px;padding:5px 13px;color:var(--muted);">MCP Inventory</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;border:1px solid var(--line);border-radius:2px;padding:5px 13px;color:var(--muted);">AI Red Teaming</span>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">Confidential</span>
+    <div class="progress-dots" id="dots0"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 1 — CHALLENGES ══════ -->
+<div class="slide" id="s1"
+  data-reveals='[
+    {"sel":".ri-1","delay":0},
+    {"sel":".ri-2","delay":0},
+    {"sel":".ri-3","delay":0},
+    {"sel":".ri-4","delay":0},
+    {"sel":".ri-5","delay":0}
+  ]'>
+  <div class="reveal-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="slide-label">01 — Current Landscape</div>
+    <div class="slide-title">Five Enterprise<br><em>AI Challenges</em></div>
+    <div class="reveal-items">
+      <div class="reveal-item ri-1">
+        <span class="item-num">01</span>
+        <div class="item-body">
+          <div class="item-title">Shadow AI</div>
+          <p>Unsanctioned tools in use with no visibility, approval process, or blocking strategy — the attack surface is already out of control.</p>
+        </div>
+        <span class="item-badge badge-red">High Risk</span>
+      </div>
+      <div class="reveal-item ri-2">
+        <span class="item-num">02</span>
+        <div class="item-body">
+          <div class="item-title">Insecure Vibe Coding</div>
+          <p>Code generation tools — Claude Code, Codex, Cursor, Codeium — ship vulnerable patterns, hardcoded secrets, and supply-chain risks into production with no guardrails.</p>
+        </div>
+        <span class="item-badge badge-red">High Risk</span>
+      </div>
+      <div class="reveal-item ri-3">
+        <span class="item-num">03</span>
+        <div class="item-body">
+          <div class="item-title">Agent Deployment &amp; Runtime Monitoring</div>
+          <p>Agentic workloads run as isolated silos. No centralised view of tool calls, data access, memory state, or what happens during an incident.</p>
+        </div>
+        <span class="item-badge badge-blue">Operational</span>
+      </div>
+      <div class="reveal-item ri-4">
+        <span class="item-num">04</span>
+        <div class="item-body">
+          <div class="item-title">Agent &amp; MCP Inventory</div>
+          <p>No approved catalogue of agents or MCP servers. Teams connect arbitrary servers, granting unchecked tool access with no audit trail.</p>
+        </div>
+        <span class="item-badge badge-blue">Governance Gap</span>
+      </div>
+      <div class="reveal-item ri-5">
+        <span class="item-num">05</span>
+        <div class="item-body">
+          <div class="item-title">AI Workflow Red Teaming</div>
+          <p>AI-specific attack paths — indirect prompt injection, privilege escalation via tool chains, data exfiltration through reasoning — are invisible to conventional scanners.</p>
+        </div>
+        <span class="item-badge badge-green">Emerging</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">01 / Challenges</span>
+    <div class="progress-dots" id="dots1"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 2 — RMF STATEMENT ══════ -->
+<div class="slide" id="s2"
+  data-reveals='[
+    {"sel":".rmf-sup","delay":0},
+    {"sel":".fn-1","delay":0},
+    {"sel":".fn-2","delay":80},
+    {"sel":".fn-3","delay":160},
+    {"sel":".fn-4","delay":240},
+    {"sel":".fn-5","delay":320}
+  ]'>
+  <div class="flow-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">02 — Foundation</div>
+    <div class="s-title">Before Any Control,<br><em>Know Your Surface</em></div>
+    <p class="rmf-sup" style="font-size:0.95rem;font-weight:300;color:var(--muted);max-width:680px;line-height:1.75;margin-bottom:32px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+      An <strong style="color:var(--text);font-weight:500;">AI Risk Management Framework</strong> orchestrates a structured assessment of the existing risk posture — mapping exactly where AI is running, what data it touches, and the blast radius of any compromise. You cannot govern what you haven't inventoried.
+    </p>
+    <div class="flow-nodes" style="flex:1;">
+      <div class="flow-node fn-1">
+        <span class="fn-num">Step 01</span>
+        <h3>Identify</h3>
+        <p>Inventory all AI tools, agents, APIs, and models — sanctioned and shadow.</p>
+      </div>
+      <div class="flow-node fn-2">
+        <span class="fn-num">Step 02</span>
+        <h3>Measure</h3>
+        <p>Assess data sensitivity, permissions, and blast radius per workload.</p>
+      </div>
+      <div class="flow-node fn-3 highlight">
+        <span class="fn-num">Step 03</span>
+        <h3>Govern</h3>
+        <p>Apply policies, approval workflows, and acceptable-use standards.</p>
+      </div>
+      <div class="flow-node fn-4">
+        <span class="fn-num">Step 04</span>
+        <h3>Monitor</h3>
+        <p>Continuous runtime telemetry, anomaly detection, and audit logging.</p>
+      </div>
+      <div class="flow-node fn-5">
+        <span class="fn-num">Step 05</span>
+        <h3>Improve</h3>
+        <p>Red team findings drive policy updates and control hardening.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">02 / AI RMF</span>
+    <div class="progress-dots" id="dots2"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 3 — SHADOW AI: CHATBOTS ══════ -->
+<div class="slide" id="s3"
+  data-reveals='[
+    {"sel":".sh-1","delay":0},
+    {"sel":".sh-2","delay":0},
+    {"sel":".sh-3","delay":0},
+    {"sel":".sh-4","delay":0}
+  ]'>
+  <div class="two-col-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">03 — Shadow AI</div>
+    <div class="s-title">Controlling <em>Chatbot</em><br>Access via Identity</div>
+    <div class="two-col-body">
+      <div class="col-block">
+        <div class="col-item sh-1">
+          <div class="ci-label">IDP Enforcement</div>
+          <h3>IDP Group Policies</h3>
+          <p>Create dedicated AI access groups. Only approved devices with MFA-satisfied sessions and explicit group membership can authenticate to AI providers.</p>
+        </div>
+        <div class="col-item sh-2">
+          <div class="ci-label">Device Trust</div>
+          <h3>Device Code Flow Restrictions</h3>
+          <p>Block AI app authentication from unmanaged or non-compliant endpoints using IDP device trust and authorization grant requirements.</p>
+        </div>
+      </div>
+      <div class="col-block">
+        <div class="col-item sh-3">
+          <div class="ci-label">Network Layer</div>
+          <h3>Network-Layer Enforcement</h3>
+          <p>DNS and proxy-layer blocking for uncategorised AI SaaS. Enforce an approved-only allowlist at the network perimeter — complements IDP controls.</p>
+          <div class="pill-row"><span class="pill">Network Proxy</span><span class="pill">EDR Telemetry</span><span class="pill">Asset Inventory</span></div>
+        </div>
+        <div class="col-item sh-4">
+          <div class="ci-label orange">⚠ Critical Gap</div>
+          <h3>Auth Bypass Risk</h3>
+          <p>OAuth flows like <code style="font-family:monospace;font-size:0.82rem;color:var(--blue);">auth.openai.com</code> bypass proxy controls entirely. IDP policy must cover the auth endpoints — not just the chat UI.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">03 / Shadow AI — Chatbots</span>
+    <div class="progress-dots" id="dots3"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 4 — AI GATEWAY ══════ -->
+<div class="slide" id="s4"
+  data-reveals='[
+    {"sel":".gw-l0","delay":0},
+    {"sel":".gw-a1","delay":0},
+    {"sel":".gw-l1","delay":0},
+    {"sel":".gw-a2","delay":0},
+    {"sel":".gw-l2","delay":0},
+    {"sel":".gw-a3","delay":0},
+    {"sel":".gw-l3","delay":0}
+  ]'>
+  <div class="gateway-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">04 — AI Gateway</div>
+    <div class="s-title"><em>REST API</em> Governance<br>via Centralised Proxy</div>
+
+    <div class="gw-layer gw-l0" style="opacity:0;transition:opacity .4s;">
+      <div class="gw-layer-label visible">Upstream Consumers</div>
+      <div class="gw-boxes">
+        <div class="gw-box visible"><h4>Developer Tools</h4><p>IDEs, CI pipelines, scripts</p></div>
+        <div class="gw-box visible"><h4>Internal Apps</h4><p>Product features, chatbots</p></div>
+        <div class="gw-box visible"><h4>Agentic Workflows</h4><p>Orchestration frameworks, custom agents</p></div>
+        <div class="gw-box visible"><h4>Third-party SaaS</h4><p>Approved integrations</p></div>
+      </div>
+    </div>
+
+    <div class="gw-arrow gw-a1">↓ All traffic routed through ↓</div>
+
+    <div class="gw-layer gw-l2" style="opacity:0;transition:opacity .4s;">
+      <div class="gw-boxes" style="justify-content:center;">
+        <div class="gw-box gw-center visible" style="max-width:460px;">
+          <h4>AI Gateway / Proxy</h4>
+          <p style="margin-top:6px;font-size:0.8rem;color:var(--muted);">Open-source or enterprise — depends on scale and compliance needs</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gw-arrow gw-a3">↓ Capabilities ↓</div>
+
+    <div class="gw-layer gw-l3" style="opacity:0;transition:opacity .4s;">
+      <div class="gw-boxes">
+        <div class="gw-box visible"><h4>💰 Budgeting</h4><p>Per-team token limits</p></div>
+        <div class="gw-box visible"><h4>⚖️ Load Balancing</h4><p>Multi-model failover</p></div>
+        <div class="gw-box visible"><h4>🪙 Token Mgmt</h4><p>Rate limits &amp; quotas</p></div>
+        <div class="gw-box visible"><h4>🔀 Routing</h4><p>Model by task &amp; cost</p></div>
+        <div class="gw-box visible"><h4>⚡ Caching</h4><p>Semantic deduplication</p></div>
+        <div class="gw-box visible"><h4>🔍 Audit Logs</h4><p>Full prompt telemetry</p></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">04 / AI Gateway</span>
+    <div class="progress-dots" id="dots4"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 5 — VIBE CODING RISKS ══════ -->
+<div class="slide" id="s5"
+  data-reveals='[
+    {"sel":".vc-1","delay":0},
+    {"sel":".vc-2","delay":0},
+    {"sel":".vc-3","delay":0},
+    {"sel":".vc-4","delay":0},
+    {"sel":".vc-5","delay":0}
+  ]'>
+  <div class="reveal-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="slide-label">05 — Vibe Coding</div>
+    <div class="slide-title">The Growing Risk of<br><em>AI-Assisted Development</em></div>
+    <div class="reveal-items">
+      <div class="reveal-item vc-1">
+        <span class="item-num">01</span>
+        <div class="item-body">
+          <div class="item-title">Malicious Skills &amp; Extensions</div>
+          <p>Compromised plugins downloaded from public repos introduce backdoors directly into developer environments — before a single line of code is written.</p>
+        </div>
+        <span class="item-badge badge-red">Supply Chain</span>
+      </div>
+      <div class="reveal-item vc-2">
+        <span class="item-num">02</span>
+        <div class="item-body">
+          <div class="item-title">Unauthorised MCP Servers</div>
+          <p>Developers connect arbitrary MCP servers granting AI unchecked access to filesystems, databases, and internal APIs — no approval, no audit.</p>
+        </div>
+        <span class="item-badge badge-red">High Risk</span>
+      </div>
+      <div class="reveal-item vc-3">
+        <span class="item-num">03</span>
+        <div class="item-body">
+          <div class="item-title">Overly Permissive Data Access</div>
+          <p>AI coding agents inherit developer-level credentials — far exceeding least privilege. Any compromise of the agent is a compromise of the developer's full access.</p>
+        </div>
+        <span class="item-badge badge-red">High Risk</span>
+      </div>
+      <div class="reveal-item vc-4">
+        <span class="item-num">04</span>
+        <div class="item-body">
+          <div class="item-title">No Runtime Monitoring</div>
+          <p>There is no mechanism to observe what an AI coding assistant is actually doing — file reads, network calls, or token exfiltration go completely undetected.</p>
+        </div>
+        <span class="item-badge badge-blue">Blind Spot</span>
+      </div>
+      <div class="reveal-item vc-5">
+        <span class="item-num">05</span>
+        <div class="item-body">
+          <div class="item-title">Uncontrolled Tool Access</div>
+          <p>AI tools can invoke shell commands, git operations, and package installs with no approval workflow, no rate limiting, and no audit trail.</p>
+        </div>
+        <span class="item-badge badge-blue">Governance Gap</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">05 / Vibe Coding Risks</span>
+    <div class="progress-dots" id="dots5"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 6 — CODE GEN CONTROLS ══════ -->
+<div class="slide" id="s6"
+  data-reveals='[
+    {"sel":".cg-1","delay":0},
+    {"sel":".cg-2","delay":0},
+    {"sel":".cg-3","delay":0},
+    {"sel":".cg-4","delay":0}
+  ]'>
+  <div class="two-col-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">06 — Controls</div>
+    <div class="s-title">Securing <em>AI-Assisted</em><br>Development</div>
+    <div class="two-col-body">
+      <div class="col-block">
+        <div class="col-item cg-1">
+          <div class="ci-label">Approved Registry</div>
+          <h3>Skill &amp; Extension Management</h3>
+          <p>Block unapproved IDE extensions via endpoint policy. Maintain a signed registry of approved skills. Continuously re-test for supply-chain compromise after every version update.</p>
+        </div>
+        <div class="col-item cg-2">
+          <div class="ci-label">Automated Scanning</div>
+          <h3>MCP Server Scanning</h3>
+          <p>Scan MCP manifests for tool poisoning, prompt injection patterns, cross-origin redirects, and overpermissioned declarations before a developer can connect.</p>
+          <div class="pill-row"><span class="pill">Custom Scanner</span><span class="pill">CI Gate</span></div>
+        </div>
+      </div>
+      <div class="col-block">
+        <div class="col-item cg-3">
+          <div class="ci-label">Enforcement Hooks</div>
+          <h3>Application Security Hooks</h3>
+          <p>Pre/post-execution hooks enforce a baseline security process: secret detection, SAST check, dependency review, and approval gates before code is committed or deployed.</p>
+        </div>
+        <div class="col-item cg-4">
+          <div class="ci-label">Isolation</div>
+          <h3>Runtime Sandboxing</h3>
+          <p>Containerise agent execution. Strict filesystem, network, and process namespacing. Ephemeral credentials — agents operate at minimum required permissions with no persistent state.</p>
+          <div class="pill-row"><span class="pill">Containers</span><span class="pill">Syscall Filtering</span><span class="pill">Runtime Observability</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">06 / Code Gen Controls</span>
+    <div class="progress-dots" id="dots6"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 7 — AGENT RUNTIME ══════ -->
+<div class="slide" id="s7"
+  data-reveals='[
+    {"sel":".ar-1","delay":0},
+    {"sel":".ar-2","delay":0},
+    {"sel":".ar-3","delay":0},
+    {"sel":".ar-4","delay":0}
+  ]'>
+  <div class="reveal-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="slide-label">07 — Agent Runtime</div>
+    <div class="slide-title">Centralised <em>Deployment</em><br>&amp; Operational Control</div>
+    <div class="reveal-items">
+      <div class="reveal-item ar-1">
+        <span class="item-num">⚠</span>
+        <div class="item-body">
+          <div class="item-title" style="color:var(--orange);">The Core Problem</div>
+          <p>Agent swarms run as disconnected silos. During an incident there is no single answer to: <strong style="color:var(--text);">what ran, what did it call, what did it access, and what changed?</strong></p>
+        </div>
+        <span class="item-badge badge-red">Operational</span>
+      </div>
+      <div class="reveal-item ar-2">
+        <span class="item-num">01</span>
+        <div class="item-body">
+          <div class="item-title">Container-Native Runtime</div>
+          <p>Deploy agents as ephemeral containers. Existing primitives — network policies, seccomp, read-only filesystems, resource limits — become agent guardrails by default. No new tooling required.</p>
+        </div>
+        <span class="item-badge badge-green">Solution</span>
+      </div>
+      <div class="reveal-item ar-3">
+        <span class="item-num">02</span>
+        <div class="item-body">
+          <div class="item-title">Centralised AgentOps</div>
+          <p>Route all executions through a unified runtime platform — capturing tool call traces, memory snapshots, and inter-agent communication in one place.</p>
+        </div>
+        <span class="item-badge badge-green">Solution</span>
+      </div>
+      <div class="reveal-item ar-4">
+        <span class="item-num">03</span>
+        <div class="item-body">
+          <div class="item-title">Scoped Agent Identity</div>
+          <p>Each agent receives a short-lived, scoped identity. Tool access is explicitly enumerated — no agent inherits ambient permissions from the host environment. Every invocation is logged against a named identity.</p>
+        </div>
+        <span class="item-badge badge-green">Solution</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">07 / Agent Runtime</span>
+    <div class="progress-dots" id="dots7"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 8 — MCP CATALOGUE ══════ -->
+<div class="slide" id="s8"
+  data-reveals='[
+    {"sel":".mc-1","delay":0},
+    {"sel":".mc-2","delay":0},
+    {"sel":".mc-3","delay":0},
+    {"sel":".mc-4","delay":0}
+  ]'>
+  <div class="two-col-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">08 — MCP Governance</div>
+    <div class="s-title"><em>Shadow MCP</em> Elimination<br>&amp; Agent Catalogue</div>
+    <div class="two-col-body">
+      <div class="col-block">
+        <div class="col-item mc-1">
+          <div class="ci-label orange">The Problem</div>
+          <h3>Shadow MCP</h3>
+          <p>An unapproved MCP server declaring <code style="font-family:monospace;font-size:.8rem;color:var(--blue);">read_file</code>, <code style="font-family:monospace;font-size:.8rem;color:var(--blue);">execute_sql</code>, or <code style="font-family:monospace;font-size:.8rem;color:var(--blue);">send_email</code> has been granted that access the moment a developer connects it. No approval, no audit, no revocation path.</p>
+        </div>
+        <div class="col-item mc-2">
+          <div class="ci-label">Enablement</div>
+          <h3>Pre-approved MCP Registry</h3>
+          <p>A signed, version-controlled catalogue of approved MCP servers with documented capabilities and security review status. Unapproved servers blocked at endpoint and network layer.</p>
+          <div class="pill-row"><span class="pill">Signed Versions</span><span class="pill">Risk Scores</span></div>
+        </div>
+      </div>
+      <div class="col-block">
+        <div class="col-item mc-3">
+          <div class="ci-label">Review Process</div>
+          <h3>Automated Security Gate</h3>
+          <p>Self-service submission portal → automated scanner (tool poisoning, prompt injection, SSRF) → security review gate → signed approval with expiry → continuous re-scan on version updates.</p>
+        </div>
+        <div class="col-item mc-4">
+          <div class="ci-label">Developer Experience</div>
+          <h3>Agent Profile Catalogue</h3>
+          <p>Standardised agent profiles define permitted tools, model, memory scope, and execution context. A well-governed catalogue reduces friction — developers get a fast path to approved, secure MCPs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">08 / MCP &amp; Agent Catalogue</span>
+    <div class="progress-dots" id="dots8"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 9 — RED TEAMING: WHAT WE TEST ══════ -->
+<div class="slide" id="s9"
+  data-reveals='[
+    {"sel":".rt-chain","delay":0},
+    {"sel":".rt-insight","delay":0},
+    {"sel":".rta-1","delay":0},
+    {"sel":".rta-2","delay":0},
+    {"sel":".rta-3","delay":0},
+    {"sel":".rta-4","delay":0},
+    {"sel":".rta-5","delay":0},
+    {"sel":".rta-6","delay":0}
+  ]'>
+  <div class="attack-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">09 — AI Red Teaming</div>
+    <div class="s-title">What We <em>Test</em></div>
+
+    <div class="attack-chain rt-chain" style="opacity:0;transform:translateY(12px);transition:opacity .4s,transform .4s;margin-bottom:16px;">
+      <div class="ac-node red">
+        <span class="ac-icon">🕵️</span>
+        <h3>Adversarial Input</h3>
+        <p>Injected prompt or poisoned context</p>
+      </div>
+      <div class="ac-arrow">→</div>
+      <div class="ac-node blue">
+        <span class="ac-icon">🤖</span>
+        <h3>Legitimate Agent</h3>
+        <p>Authorised, fully credentialled</p>
+      </div>
+      <div class="ac-arrow">→</div>
+      <div class="ac-node amber">
+        <span class="ac-icon">🔧</span>
+        <h3>Authorised Tool Call</h3>
+        <p>send_email · read_db · execute_code</p>
+      </div>
+      <div class="ac-arrow">→</div>
+      <div class="ac-node danger">
+        <span class="ac-icon">💥</span>
+        <h3>Unintended Impact</h3>
+        <p>Data exfil · lateral movement</p>
+      </div>
+    </div>
+
+    <div class="attack-insight rt-insight" style="margin-bottom:16px;">
+      <div class="ins-label">Key Insight</div>
+      <p>The real threat is not <strong>unauthorised</strong> tool invocation — it is <strong>authorised tool invocation with malicious intent</strong>. The agent is entitled. The attacker manipulates the reasoning chain so the agent weaponises its own permissions.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+
+      <div class="rta-1" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">01</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Prompt Injection</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Malicious instructions hidden in user input, tool outputs, or retrieved documents.</p>
+      </div>
+
+      <div class="rta-2" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">02</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Goal Hijacking</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Override the agent's objective mid-execution without triggering any safety check.</p>
+      </div>
+
+      <div class="rta-3" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">03</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Tool Abuse</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Legitimate, permitted tool calls — manipulated to produce harmful outcomes.</p>
+      </div>
+
+      <div class="rta-4" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">04</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Data Exfil via Chaining</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Chain innocuous calls across steps — no single request trips a rule, the sequence does.</p>
+      </div>
+
+      <div class="rta-5" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">05</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Memory Poisoning</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Inject false context into agent memory — corrupting every future decision in that session.</p>
+      </div>
+
+      <div class="rta-6" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">06</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:800;text-transform:uppercase;margin-bottom:4px;">Multi-Agent Escalation</div>
+        <p style="font-size:0.78rem;font-weight:300;color:var(--muted);line-height:1.4;">Compromise one agent to pivot and escalate permissions across the wider swarm.</p>
+      </div>
+
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">09 / AI Red Teaming — Attack Surface</span>
+    <div class="progress-dots" id="dots9"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+<!-- ══════ SLIDE 10 — RED TEAMING: METHODOLOGY & OUTCOMES ══════ -->
+<div class="slide" id="s10"
+  data-reveals='[
+    {"sel":".rm-1","delay":0},
+    {"sel":".rm-2","delay":0},
+    {"sel":".rm-3","delay":0},
+    {"sel":".ro-1","delay":0},
+    {"sel":".ro-2","delay":0},
+    {"sel":".ro-3","delay":0},
+    {"sel":".ro-4","delay":0}
+  ]'>
+  <div class="two-col-slide" style="flex:1;display:flex;flex-direction:column;">
+    <div class="s-label">10 — AI Red Teaming</div>
+    <div class="s-title"><em>Methodology</em><br>&amp; Outcomes</div>
+    <div class="two-col-body">
+
+      <!-- Left: Methodology -->
+      <div class="col-block">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">How We Test</div>
+
+        <div class="col-item rm-1">
+          <div class="ci-label">Step 01</div>
+          <h3>Workflow Threat Modelling</h3>
+          <p>Map every AI workflow as a directed graph — attack paths emerge before a test runs.</p>
+        </div>
+
+        <div class="col-item rm-2">
+          <div class="ci-label">Step 02</div>
+          <h3>Automated Adversarial Suites</h3>
+          <p>Hundreds of injection variants, role confusion payloads, and chained tool abuse sequences per workflow.</p>
+        </div>
+
+        <div class="col-item rm-3">
+          <div class="ci-label">Step 03</div>
+          <h3>Manual Creative Red Teaming</h3>
+          <p>Human adversarial thinking for novel chains — business logic abuse, cross-workflow pivots, compound scenarios.</p>
+        </div>
+      </div>
+
+      <!-- Right: Outcomes -->
+      <div class="col-block">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">What We Get</div>
+
+        <div class="col-item ro-1">
+          <div class="ci-label">Output 01</div>
+          <h3>Documented Attack Paths</h3>
+          <p>Severity-rated findings with reproducible proof-of-concept — not a list, a full attack narrative.</p>
+        </div>
+
+        <div class="col-item ro-2">
+          <div class="ci-label">Output 02</div>
+          <h3>Detection Rules &amp; Playbooks</h3>
+          <p>Every finding becomes a runtime monitoring rule and a blue team response playbook.</p>
+        </div>
+
+        <div class="col-item ro-3">
+          <div class="ci-label">Output 03</div>
+          <h3>Hardened Agent Profiles</h3>
+          <p>Tool access scoped down, memory boundaries tightened, inter-agent trust explicitly restricted.</p>
+        </div>
+
+        <div class="col-item ro-4">
+          <div class="ci-label">Output 04</div>
+          <h3>Residual Risk Register</h3>
+          <p>Accepted risks are owned and time-bounded. Red team cadence ensures nothing stays residual indefinitely.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="slide-chrome">
+    <span class="chrome-num">10 / AI Red Teaming — Methodology</span>
+    <div class="progress-dots" id="dots10"></div>
+    <span class="chrome-title">AI Governance Briefing</span>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- Hint -->
+<div class="hint" id="hint">
+  <span class="hint-key">→</span>
+  <span>click or press to advance</span>
+</div>
+
+<script>
+const TOTAL = 11;
+let cur = 0;
+
+// Build slide configs
+const slides = Array.from(document.querySelectorAll('.slide'));
+
+// Per-slide reveal state
+const revealState = slides.map(slide => {
+  const raw = slide.dataset.reveals;
+  if (!raw) return { items: [], idx: 0 };
+  const items = JSON.parse(raw);
+  return { items, idx: 0 };
+});
+
+function getItems(slideIdx) {
+  const state = revealState[slideIdx];
+  return state.items.map(cfg => ({
+    el: document.querySelectorAll(cfg.sel),
+    delay: cfg.delay || 0
+  }));
+}
+
+function showSlide(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(n, TOTAL - 1));
+  slides[cur].classList.add('active');
+
+  // Reset progress dots for all
+  updateDots();
+
+  // Hide hint after first advance
+  document.getElementById('hint').style.opacity = cur > 0 ? '0' : '1';
+}
+
+function advance() {
+  const state = revealState[cur];
+  if (state.idx < state.items.length) {
+    // Reveal next item on current slide
+    const cfg = state.items[state.idx];
+    const els = document.querySelectorAll(cfg.sel);
+    setTimeout(() => {
+      els.forEach(el => {
+        el.classList.add('visible');
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+    }, cfg.delay);
+    state.idx++;
+    updateDots();
+  } else {
+    // Move to next slide
+    if (cur < TOTAL - 1) showSlide(cur + 1);
+  }
+}
+
+function retreat() {
+  const state = revealState[cur];
+  if (state.idx > 0) {
+    // Hide last revealed item
+    state.idx--;
+    const cfg = state.items[state.idx];
+    const els = document.querySelectorAll(cfg.sel);
+    els.forEach(el => {
+      el.classList.remove('visible');
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(12px)';
+    });
+    updateDots();
+  } else {
+    if (cur > 0) {
+      showSlide(cur - 1);
+      // Fast-forward reveals on previous slide
+      const prevState = revealState[cur];
+      prevState.items.forEach((cfg, i) => {
+        const els = document.querySelectorAll(cfg.sel);
+        els.forEach(el => { el.classList.add('visible'); el.style.opacity='1'; el.style.transform='none'; });
+      });
+      prevState.idx = prevState.items.length;
+      updateDots();
+    }
+  }
+}
+
+function updateDots() {
+  for (let i = 0; i < TOTAL; i++) {
+    const dotsEl = document.getElementById('dots' + i);
+    if (!dotsEl) continue;
+    dotsEl.innerHTML = '';
+    const state = revealState[i];
+    const total_reveals = state.items.length;
+    // Show dots only if there are reveals
+    if (total_reveals === 0) {
+      // Just slide dot
+      const d = document.createElement('div');
+      d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
+      d.onclick = () => { showSlide(i); };
+      dotsEl.appendChild(d);
+      return;
+    }
+    // One dot per slide (condensed)
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
+    d.onclick = () => showSlide(i);
+    dotsEl.appendChild(d);
+  }
+}
+
+// Build global dot nav in each slide (all slides share same dot array)
+// Actually let's replace the per-slide dots with a global nav
+// Re-do: one global dot row fixed
+const globalDots = document.createElement('div');
+globalDots.style.cssText = 'position:fixed;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;';
+document.body.appendChild(globalDots);
+
+function buildGlobalDots() {
+  globalDots.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
+    d.style.cursor = 'pointer';
+    d.onclick = () => {
+      // Jump to slide, reset reveals
+      showSlide(i);
+    };
+    globalDots.appendChild(d);
+  }
+  // Remove per-slide chrome dots
+  document.querySelectorAll('[id^="dots"]').forEach(el => el.style.display = 'none');
+}
+
+buildGlobalDots();
+
+function refreshGlobalDots() {
+  const kids = globalDots.querySelectorAll('.pdot');
+  kids.forEach((d, i) => {
+    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
+  });
+}
+
+// Override showSlide to update global dots
+const _orig = showSlide;
+function showSlide(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(n, TOTAL - 1));
+  slides[cur].classList.add('active');
+  refreshGlobalDots();
+  document.getElementById('hint').style.opacity = cur > 0 ? '0' : '1';
+}
+
+// Events
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); advance(); refreshGlobalDots(); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); retreat(); refreshGlobalDots(); }
+});
+document.addEventListener('click', e => {
+  if (e.target.closest('.pdot') || e.target.closest('.hint')) return;
+  advance(); refreshGlobalDots();
+});
+
+// Init
+showSlide(0);
+</script>
+</body>
+</html>
