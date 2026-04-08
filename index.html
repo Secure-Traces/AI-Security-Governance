@@ -1081,164 +1081,72 @@ body::after {
 <script>
 const TOTAL = 11;
 let cur = 0;
-
-// Build slide configs
 const slides = Array.from(document.querySelectorAll('.slide'));
 
-// Per-slide reveal state
-const revealState = slides.map(slide => {
+function revealAll(slideIdx) {
+  const slide = slides[slideIdx];
   const raw = slide.dataset.reveals;
-  if (!raw) return { items: [], idx: 0 };
-  const items = JSON.parse(raw);
-  return { items, idx: 0 };
-});
-
-function getItems(slideIdx) {
-  const state = revealState[slideIdx];
-  return state.items.map(cfg => ({
-    el: document.querySelectorAll(cfg.sel),
-    delay: cfg.delay || 0
-  }));
-}
-
-function showSlide(n) {
-  slides[cur].classList.remove('active');
-  cur = Math.max(0, Math.min(n, TOTAL - 1));
-  slides[cur].classList.add('active');
-
-  // Reset progress dots for all
-  updateDots();
-
-  // Hide hint after first advance
-  document.getElementById('hint').style.opacity = cur > 0 ? '0' : '1';
-}
-
-function advance() {
-  const state = revealState[cur];
-  if (state.idx < state.items.length) {
-    // Reveal next item on current slide
-    const cfg = state.items[state.idx];
-    const els = document.querySelectorAll(cfg.sel);
-    setTimeout(() => {
-      els.forEach(el => {
-        el.classList.add('visible');
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-      });
-    }, cfg.delay);
-    state.idx++;
-    updateDots();
-  } else {
-    // Move to next slide
-    if (cur < TOTAL - 1) showSlide(cur + 1);
-  }
-}
-
-function retreat() {
-  const state = revealState[cur];
-  if (state.idx > 0) {
-    // Hide last revealed item
-    state.idx--;
-    const cfg = state.items[state.idx];
-    const els = document.querySelectorAll(cfg.sel);
-    els.forEach(el => {
-      el.classList.remove('visible');
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(12px)';
+  if (!raw) return;
+  JSON.parse(raw).forEach(cfg => {
+    slide.querySelectorAll(cfg.sel).forEach(el => {
+      el.classList.add('visible');
+      el.style.opacity = '1';
+      el.style.transform = 'none';
     });
-    updateDots();
-  } else {
-    if (cur > 0) {
-      showSlide(cur - 1);
-      // Fast-forward reveals on previous slide
-      const prevState = revealState[cur];
-      prevState.items.forEach((cfg, i) => {
-        const els = document.querySelectorAll(cfg.sel);
-        els.forEach(el => { el.classList.add('visible'); el.style.opacity='1'; el.style.transform='none'; });
-      });
-      prevState.idx = prevState.items.length;
-      updateDots();
-    }
-  }
-}
-
-function updateDots() {
-  for (let i = 0; i < TOTAL; i++) {
-    const dotsEl = document.getElementById('dots' + i);
-    if (!dotsEl) continue;
-    dotsEl.innerHTML = '';
-    const state = revealState[i];
-    const total_reveals = state.items.length;
-    // Show dots only if there are reveals
-    if (total_reveals === 0) {
-      // Just slide dot
-      const d = document.createElement('div');
-      d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
-      d.onclick = () => { showSlide(i); };
-      dotsEl.appendChild(d);
-      return;
-    }
-    // One dot per slide (condensed)
-    const d = document.createElement('div');
-    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
-    d.onclick = () => showSlide(i);
-    dotsEl.appendChild(d);
-  }
-}
-
-// Build global dot nav in each slide (all slides share same dot array)
-// Actually let's replace the per-slide dots with a global nav
-// Re-do: one global dot row fixed
-const globalDots = document.createElement('div');
-globalDots.style.cssText = 'position:fixed;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;';
-document.body.appendChild(globalDots);
-
-function buildGlobalDots() {
-  globalDots.innerHTML = '';
-  for (let i = 0; i < TOTAL; i++) {
-    const d = document.createElement('div');
-    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
-    d.style.cursor = 'pointer';
-    d.onclick = () => {
-      // Jump to slide, reset reveals
-      showSlide(i);
-    };
-    globalDots.appendChild(d);
-  }
-  // Remove per-slide chrome dots
-  document.querySelectorAll('[id^="dots"]').forEach(el => el.style.display = 'none');
-}
-
-buildGlobalDots();
-
-function refreshGlobalDots() {
-  const kids = globalDots.querySelectorAll('.pdot');
-  kids.forEach((d, i) => {
-    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
   });
 }
 
-// Override showSlide to update global dots
-const _orig = showSlide;
 function showSlide(n) {
   slides[cur].classList.remove('active');
   cur = Math.max(0, Math.min(n, TOTAL - 1));
   slides[cur].classList.add('active');
+  // Stagger-reveal all items on the new slide
+  const slide = slides[cur];
+  const raw = slide.dataset.reveals;
+  if (raw) {
+    JSON.parse(raw).forEach((cfg, i) => {
+      setTimeout(() => {
+        slide.querySelectorAll(cfg.sel).forEach(el => {
+          el.classList.add('visible');
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        });
+      }, i * 60);
+    });
+  }
   refreshGlobalDots();
   document.getElementById('hint').style.opacity = cur > 0 ? '0' : '1';
 }
 
-// Events
+// Global dot nav
+const globalDots = document.createElement('div');
+globalDots.style.cssText = 'position:fixed;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;';
+document.body.appendChild(globalDots);
+
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'pdot';
+  d.style.cursor = 'pointer';
+  d.onclick = (e) => { e.stopPropagation(); showSlide(i); };
+  globalDots.appendChild(d);
+}
+document.querySelectorAll('[id^="dots"]').forEach(el => el.style.display = 'none');
+
+function refreshGlobalDots() {
+  globalDots.querySelectorAll('.pdot').forEach((d, i) => {
+    d.className = 'pdot' + (i === cur ? ' current' : (i < cur ? ' done' : ''));
+  });
+}
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); advance(); refreshGlobalDots(); }
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); retreat(); refreshGlobalDots(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); if (cur < TOTAL - 1) showSlide(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); if (cur > 0) showSlide(cur - 1); }
 });
 document.addEventListener('click', e => {
   if (e.target.closest('.pdot') || e.target.closest('.hint')) return;
-  advance(); refreshGlobalDots();
+  if (cur < TOTAL - 1) showSlide(cur + 1);
 });
 
-// Init
 showSlide(0);
 </script>
 </body>
